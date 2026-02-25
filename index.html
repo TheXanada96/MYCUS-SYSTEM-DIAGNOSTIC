@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MYCUS MAINFRAME // SYSTEM DIAGNOSTIC</title>
+    <title>MYCUS // SYSTEM DIAGNOSTIC v2.0</title>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -13,403 +13,1147 @@
             --term-red: #ff3333;
             --term-yellow: #ffff33;
             --term-cyan: #00ffff;
-            --scanline: rgba(0, 0, 0, 0.5);
+            --term-purple: #cc00ff;
+            --term-blue: #0066ff;
         }
         
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            scrollbar-width: thin;
-            scrollbar-color: var(--term-green) var(--bg-color);
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; scrollbar-width: thin; scrollbar-color: var(--term-green) var(--bg-color); }
 
-        /* Scrollbar Retro */
         ::-webkit-scrollbar { width: 12px; }
         ::-webkit-scrollbar-track { background: var(--bg-color); border-left: 1px solid var(--term-dim); }
-        ::-webkit-scrollbar-thumb { background: var(--term-green); border: 2px solid var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--term-green); border: 2px solid var(--bg-color); border-radius: 6px; }
         
         body {
             font-family: 'VT323', monospace;
             background-color: var(--bg-color);
             color: var(--term-green);
-            padding: 20px;
+            padding: 15px;
             min-height: 100vh;
-            overflow-x: hidden;
-            text-shadow: 0 0 4px var(--term-dim); /* Bagliore */
-            font-size: 1.3rem;
+            text-shadow: 0 0 4px var(--term-dim);
+            font-size: 1.25rem;
             position: relative;
+            overflow-x: hidden;
+            line-height: 1.5;
         }
 
-        /* EFFETTO CRT (SCANLINES) */
+        /* EFFETTO CRT SCANLINE */
         body::before {
-            content: " ";
-            display: block;
-            position: fixed;
-            top: 0; left: 0; bottom: 0; right: 0;
+            content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            z-index: 999;
-            background-size: 100% 2px, 3px 100%;
-            pointer-events: none;
+            z-index: 999; background-size: 100% 2px, 3px 100%; pointer-events: none; opacity: 0.85;
+        }
+
+        /* EFFETTO CRT CURVATURA */
+        body::after {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 30, 0, 0.8) 100%);
+            pointer-events: none; z-index: 1000; mix-blend-mode: multiply;
         }
 
         .container {
-            max-width: 1024px;
-            margin: 0 auto;
-            border: 2px solid var(--term-green);
-            padding: 20px;
-            box-shadow: 0 0 20px var(--term-dim), inset 0 0 20px var(--term-dim);
-            background: rgba(0, 20, 0, 0.85);
-            position: relative;
-            z-index: 1;
+            max-width: 1100px; margin: 0 auto;
+            border: 3px solid var(--term-green);
+            padding: 25px;
+            box-shadow: 
+                0 0 25px var(--term-dim), 
+                inset 0 0 30px rgba(0, 50, 0, 0.9),
+                0 0 40px var(--term-green);
+            background: rgba(0, 20, 0, 0.95);
+            position: relative; z-index: 1;
+            border-radius: 4px;
         }
         
         header {
             text-align: center;
             border-bottom: 2px dashed var(--term-green);
-            padding-bottom: 20px;
-            margin-bottom: 20px;
+            padding-bottom: 25px;
+            margin-bottom: 25px;
+            position: relative;
         }
 
         .pixel-logo {
             max-width: 180px;
-            image-rendering: pixelated; 
-            /* Filtro verde per integrarlo nel terminale */
-            filter: drop-shadow(0 0 5px var(--term-green)) grayscale(20%) sepia(100%) hue-rotate(50deg) saturate(300%);
-            transition: filter 0.3s;
-            margin-bottom: 10px;
+            image-rendering: pixelated;
+            filter: drop-shadow(0 0 8px var(--term-green)) grayscale(20%) sepia(100%) hue-rotate(50deg) saturate(300%);
+            transition: all 0.3s;
+            margin-bottom: 15px;
         }
-        .pixel-logo:hover { filter: none; }
+        .pixel-logo:hover {
+            filter: drop-shadow(0 0 15px var(--term-cyan)) grayscale(0%) sepia(0%) saturate(100%);
+            transform: scale(1.05);
+        }
         
         h1 {
-            font-size: 2.8rem;
+            font-size: 3.2rem;
             text-transform: uppercase;
             letter-spacing: 4px;
-            animation: textFlicker 3s infinite;
+            margin: 10px 0;
+            text-shadow: 0 0 10px var(--term-green);
+            animation: blink-title 2.5s infinite;
+            color: var(--term-cyan);
         }
         
-        .subtitle { font-size: 1.2rem; color: var(--term-cyan); }
+        .subtitle {
+            color: var(--term-yellow);
+            font-size: 1.4rem;
+            letter-spacing: 2px;
+            margin-top: 8px;
+            text-shadow: 0 0 8px var(--term-yellow);
+        }
 
-        /* INFO BOX */
-        .env-info {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        .env-bar {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 20px 0;
+            padding: 12px;
+            background: rgba(0, 30, 0, 0.7);
             border: 1px solid var(--term-dim);
-            padding: 10px;
-            margin-bottom: 20px;
-            background: #001100;
+            border-radius: 4px;
+            font-size: 1.1rem;
         }
-        .env-item { padding: 5px; border-right: 1px solid var(--term-dim); }
-        .env-value { color: var(--term-cyan); }
+        .env-item { text-align: center; min-width: 180px; }
+        .env-label { display: block; color: var(--term-cyan); font-size: 0.95rem; margin-bottom: 4px; }
+        .env-value { color: var(--term-green); font-weight: bold; word-break: break-all; }
 
-        /* BOTTONI */
-        .controls {
-            display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap; justify-content: center;
+        /* GRIGLIA BOTTONI CYBERPUNK */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin: 25px 0;
         }
+        
         button {
-            background: transparent; color: var(--term-green);
-            border: 2px solid var(--term-green); padding: 10px 25px;
-            font-family: 'VT323', monospace; font-size: 1.3rem;
-            cursor: pointer; text-transform: uppercase;
-            box-shadow: 0 0 5px var(--term-green);
-            transition: all 0.1s;
+            background: rgba(0, 30, 0, 0.8);
+            color: var(--term-green);
+            border: 2px solid var(--term-green);
+            padding: 14px 8px;
+            font-family: 'VT323', monospace;
+            font-size: 1.3rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.15s;
+            position: relative;
+            overflow: hidden;
+            border-radius: 3px;
+            box-shadow: 0 0 8px rgba(0, 100, 0, 0.7);
         }
-        button:hover { background: var(--term-green); color: var(--bg-color); box-shadow: 0 0 20px var(--term-green); }
-        button:active { transform: scale(0.96); }
+        button:hover {
+            background: var(--term-green);
+            color: #000;
+            box-shadow: 0 0 20px var(--term-green);
+            transform: scale(1.03);
+        }
+        button:active {
+            transform: scale(0.97) translateY(2px);
+            box-shadow: 0 0 5px var(--term-dim);
+        }
 
-        /* PROGRESS BAR */
-        .progress-container { margin: 20px 0; border: 1px solid var(--term-dim); padding: 5px; }
-        .progress-bar { height: 25px; background: #111; border: 1px solid var(--term-dim); position: relative; }
+        .btn-core {
+            border-color: var(--term-cyan);
+            color: var(--term-cyan);
+        }
+        .btn-core:hover {
+            background: var(--term-cyan);
+            color: #000;
+            box-shadow: 0 0 20px var(--term-cyan);
+        }
+
+        .btn-es6 {
+            border-color: var(--term-purple);
+            color: var(--term-purple);
+        }
+        .btn-es6:hover {
+            background: var(--term-purple);
+            color: #000;
+            box-shadow: 0 0 20px var(--term-purple);
+        }
+
+        .btn-web {
+            border-color: var(--term-blue);
+            color: var(--term-blue);
+        }
+        .btn-web:hover {
+            background: var(--term-blue);
+            color: #000;
+            box-shadow: 0 0 20px var(--term-blue);
+        }
+
+        .btn-export {
+            border-color: var(--term-yellow);
+            color: var(--term-yellow);
+        }
+        .btn-export:hover {
+            background: var(--term-yellow);
+            color: #000;
+            box-shadow: 0 0 20px var(--term-yellow);
+        }
+
+        .btn-clear {
+            border-color: var(--term-red);
+            color: var(--term-red);
+        }
+        .btn-clear:hover {
+            background: var(--term-red);
+            color: #fff;
+            box-shadow: 0 0 20px var(--term-red);
+        }
+
+        /* STATISTICHE CRT */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 15px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        .stat-card {
+            padding: 20px 10px;
+            border: 2px solid var(--term-dim);
+            background: rgba(0, 40, 0, 0.7);
+            border-radius: 4px;
+        }
+        .stat-number {
+            font-size: 2.8rem;
+            font-weight: bold;
+            margin: 5px 0;
+            text-shadow: 0 0 10px currentColor;
+        }
+        .stat-label {
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            color: var(--term-dim);
+        }
+        .stat-pass { color: var(--term-green); border-color: var(--term-green); }
+        .stat-fail { color: var(--term-red); border-color: var(--term-red); }
+        .stat-skip { color: var(--term-yellow); border-color: var(--term-yellow); }
+        .stat-total { color: var(--term-cyan); border-color: var(--term-cyan); }
+
+        /* BARRA PROGRESSO RETRÒ */
+        .progress-container {
+            margin: 25px 0;
+            background: rgba(0, 30, 0, 0.8);
+            border: 2px solid var(--term-dim);
+            border-radius: 4px;
+            padding: 15px;
+        }
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+            color: var(--term-cyan);
+        }
+        .progress-bar {
+            height: 28px;
+            background: #000;
+            border: 2px solid var(--term-green);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 0 10px rgba(0, 100, 0, 0.8);
+        }
         .progress-fill {
             height: 100%;
-            background: repeating-linear-gradient(45deg, var(--term-green), var(--term-green) 10px, #22aa00 10px, #22aa00 20px);
-            width: 0%; transition: width 0.2s steps(10);
+            background: linear-gradient(90deg, var(--term-green), #00aa00);
+            width: 0%;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #000;
+            text-shadow: none;
+            position: relative;
+            overflow: hidden;
+        }
+        .progress-fill::after {
+            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.1) 10px, rgba(0,0,0,0.1) 20px);
+            animation: scanline 0.8s linear infinite;
         }
 
-        /* RISULTATI */
-        .category { margin-bottom: 15px; border: 1px solid var(--term-dim); }
+        /* CATEGORIE ESPANDIBILI */
+        .category {
+            margin: 20px 0;
+            border: 2px solid var(--term-dim);
+            border-radius: 4px;
+            overflow: hidden;
+            background: rgba(0, 25, 0, 0.6);
+        }
         .category-header {
-            background: var(--term-dim); color: #000; padding: 8px 15px;
-            cursor: pointer; display: flex; justify-content: space-between;
-            font-weight: bold; text-transform: uppercase;
+            background: rgba(0, 40, 0, 0.9);
+            padding: 15px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.4rem;
+            border-bottom: 2px solid var(--term-dim);
+            transition: background 0.3s;
         }
-        .category-header:hover { background: var(--term-green); }
-        .category-body { padding: 10px; background: #000500; font-size: 1.1rem; max-height: 300px; overflow-y: auto; }
-        
-        .test-item { padding: 2px 0; display: flex; gap: 10px; border-bottom: 1px dotted #1a3300; }
-        .pass-color { color: var(--term-green); }
-        .fail-color { color: var(--term-red); text-shadow: 0 0 5px red; }
-        .skip-color { color: var(--term-yellow); }
-        .test-error { color: var(--term-red); font-size: 0.9rem; padding-left: 55px; }
+        .category-header:hover {
+            background: rgba(0, 60, 0, 0.9);
+        }
+        .category-icon {
+            min-width: 30px;
+            text-align: center;
+            font-size: 1.6rem;
+        }
+        .category-summary {
+            display: flex;
+            gap: 15px;
+            font-size: 1.1rem;
+            color: var(--term-cyan);
+        }
+        .category-summary span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .category-body {
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            background: rgba(0, 15, 0, 0.8);
+            font-size: 1.15rem;
+        }
+        .test-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 3px;
+            font-family: 'VT323', monospace;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            border-left: 4px solid transparent;
+        }
+        .test-item.pass {
+            background: rgba(0, 50, 0, 0.6);
+            border-left-color: var(--term-green);
+            color: var(--term-green);
+        }
+        .test-item.fail {
+            background: rgba(50, 0, 0, 0.7);
+            border-left-color: var(--term-red);
+            color: var(--term-red);
+        }
+        .test-item.skip {
+            background: rgba(40, 40, 0, 0.6);
+            border-left-color: var(--term-yellow);
+            color: var(--term-yellow);
+        }
+        .test-icon {
+            font-size: 1.5rem;
+            min-width: 25px;
+            text-align: center;
+        }
+        .test-name {
+            flex-grow: 1;
+            word-break: break-all;
+        }
+        .test-error {
+            color: var(--term-red);
+            font-size: 1rem;
+            margin-top: 5px;
+            padding-left: 35px;
+            display: none;
+            border-left: 2px dashed var(--term-dim);
+            padding-left: 25px;
+            margin-left: 10px;
+        }
+        .test-item.fail .test-error {
+            display: block;
+        }
 
-        /* EXPORT AREA */
-        .export-area { display: none; margin-top: 20px; border: 2px solid var(--term-cyan); padding: 10px; }
+        .export-area {
+            margin-top: 25px;
+            padding: 20px;
+            background: rgba(0, 30, 0, 0.8);
+            border: 2px solid var(--term-yellow);
+            border-radius: 4px;
+            display: none;
+        }
         .export-text {
-            width: 100%; height: 150px; background: #000; color: var(--term-cyan);
-            border: none; font-family: 'VT323', monospace; font-size: 1rem; resize: vertical;
+            width: 100%;
+            height: 180px;
+            padding: 15px;
+            background: #000;
+            color: var(--term-green);
+            font-family: 'VT323', monospace;
+            font-size: 1.1rem;
+            border: 2px solid var(--term-dim);
+            border-radius: 4px;
+            resize: vertical;
+            margin-bottom: 15px;
         }
 
         footer {
-            margin-top: 30px; border-top: 2px dashed var(--term-dim); padding-top: 10px;
-            text-align: center; font-size: 0.9rem; color: var(--term-dim);
+            margin-top: 30px;
+            text-align: center;
+            border-top: 2px dashed var(--term-dim);
+            padding-top: 20px;
+            font-size: 1.05rem;
+            color: var(--term-dim);
+            letter-spacing: 1px;
+        }
+        .footer-warning {
+            color: var(--term-red);
+            margin-top: 10px;
+            font-size: 0.95rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
-        @keyframes textFlicker {
-            0% { opacity: 1; } 5% { opacity: 0.8; } 10% { opacity: 1; }
-            50% { opacity: 1; } 52% { opacity: 0.5; } 54% { opacity: 1; }
-            100% { opacity: 1; }
+        @keyframes blink-title {
+            0%, 100% { text-shadow: 0 0 10px var(--term-cyan), 0 0 20px var(--term-cyan); }
+            50% { text-shadow: 0 0 5px var(--term-cyan); }
         }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
+        @keyframes scanline {
+            0% { background-position: 0 0; }
+            100% { background-position: 100px 0; }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .blink {
+            animation: pulse 1.5s infinite;
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 15px; }
+            h1 { font-size: 2.5rem; }
+            .subtitle { font-size: 1.1rem; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            button { padding: 12px 5px; font-size: 1.15rem; }
+            .category-summary { flex-direction: column; gap: 5px; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <a href="https://mycus.altervista.org/" target="_blank">
-                <img src="https://mycus.altervista.org/wp-content/uploads/2022/02/cropped-logo-500.png" alt="MYCUS Logo" class="pixel-logo">
-            </a>
-            <h1>MYCUS MAINFRAME</h1>
-            <p class="subtitle">> SYSTEM DIAGNOSTIC PROTOCOL v2.0</p>
-        </header>
-        
-        <div id="envInfo" class="env-info">
-            <div class="env-item">SYSTEM: <span style="animation: blink 1s infinite">WAITING INPUT...</span></div>
-        </div>
-        
-        <div class="controls">
-            <button onclick="audioSys.playClick(); runAllTests()">[ INITIATE SCAN ]</button>
-            <button onclick="audioSys.playClick(); toggleAllCategories()">[ TOGGLE LOGS ]</button>
-            <button onclick="audioSys.playClick(); exportResults()" style="border-color: var(--term-yellow); color: var(--term-yellow);">[ DUMP DATA ]</button>
-        </div>
-        
-        <div class="progress-container">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <span>INTEGRITY CHECK:</span>
-                <span id="progressText">0%</span>
-            </div>
-            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-        </div>
-        
-        <div class="env-info" style="margin-top: 10px; border-color: var(--term-dim);">
-            <div class="env-item"><span class="pass-color">OK:</span> <span id="statPassed">0</span></div>
-            <div class="env-item"><span class="fail-color">ERR:</span> <span id="statFailed">0</span></div>
-            <div class="env-item"><span class="skip-color">N/A:</span> <span id="statSkipped">0</span></div>
-        </div>
 
-        <div id="testResults">
-            <div style="padding: 20px; text-align: center; color: var(--term-dim); border: 1px dashed var(--term-dim);">
-                > READY FOR COMMAND_<br>
-                > CLICK 'INITIATE SCAN' TO BEGIN<span style="animation: blink 1s infinite">█</span>
-            </div>
-        </div>
-        
-        <div class="export-area" id="exportArea">
-            <h3>> SYSTEM_LOG.TXT</h3>
-            <textarea class="export-text" id="exportText" readonly></textarea>
-            <div style="margin-top: 10px;">
-                <button onclick="audioSys.playClick(); downloadResults()">[ SAVE TO DISK ]</button>
-            </div>
-        </div>
-        
-        <footer>
-            <p>MYCUS GROUP. // ALL RIGHTS RESERVED // SECURE CONNECTION</p>
-        </footer>
+<div class="container">
+    <header>
+        <a href="https://mycus.altervista.org/" target="_blank" style="display: inline-block; text-decoration: none;">
+            <img src="https://mycus.altervista.org/wp-content/uploads/2022/02/cropped-logo-500.png" alt="MYCUS Logo" class="pixel-logo">
+        </a>
+        <h1>MYCUS // SYSTEM DIAGNOSTICS</h1>
+        <div class="subtitle">> SYSTEM DIAGNOSTICS UNIT v2.0</div>
+    </header>
+
+    <div class="env-bar" id="envInfo">
+        <!-- Riempito da JS -->
     </div>
 
-    <script>
-        // ========================================
-        // 1. MOTORE AUDIO (WEB AUDIO API)
-        // ========================================
-        const audioSys = {
-            ctx: null,
-            init() {
-                if (!this.ctx) {
-                    const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    this.ctx = new AudioContext();
-                }
-                if (this.ctx.state === 'suspended') this.ctx.resume();
-            },
-            playTone(freq, type, duration, vol = 0.1) {
-                if (!this.ctx) this.init();
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = type;
-                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-                gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start();
-                osc.stop(this.ctx.currentTime + duration);
-            },
-            playSuccess() { this.playTone(1200, 'square', 0.08, 0.05); setTimeout(() => this.playTone(1800, 'square', 0.1, 0.05), 80); },
-            playFail() { this.playTone(150, 'sawtooth', 0.4, 0.1); setTimeout(() => this.playTone(100, 'sawtooth', 0.4, 0.1), 100); },
-            playClick() { this.playTone(800, 'triangle', 0.05, 0.03); },
-            playStart() { 
-                if (!this.ctx) this.init();
-                this.playTone(200, 'sawtooth', 0.2);
-                setTimeout(() => this.playTone(400, 'sawtooth', 0.2), 100);
-                setTimeout(() => this.playTone(800, 'sawtooth', 0.4), 200);
+    <div class="controls-grid">
+        <button onclick="runAllTests()" class="blink">
+            <span>▶️</span> RUN ALL TESTS
+        </button>
+        <button onclick="runCategoryTests('core')" class="btn-core">
+            <span>⚛️</span> CORE TESTS
+        </button>
+        <button onclick="runCategoryTests('es6')" class="btn-es6">
+            <span>✨</span> ES6+ TESTS
+        </button>
+        <button onclick="runCategoryTests('web')" class="btn-web">
+            <span>🌐</span> WEB API TESTS
+        </button>
+        <button onclick="toggleAllCategories()">
+            <span>🔽</span> TOGGLE CATEGORIES
+        </button>
+        <button onclick="exportResults()" class="btn-export">
+            <span>📤</span> EXPORT REPORT
+        </button>
+        <button onclick="clearAll()" class="btn-clear">
+            <span>💀</span> CLEAR TERMINAL
+        </button>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-label">
+            <span>SYSTEM DIAGNOSTICS PROGRESS</span>
+            <span id="progressText">0%</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width: 0%">0%</div>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card stat-pass">
+            <div class="stat-number" id="statPassed">0</div>
+            <div class="stat-label">✅ PASS</div>
+        </div>
+        <div class="stat-card stat-fail">
+            <div class="stat-number" id="statFailed">0</div>
+            <div class="stat-label">❌ FAIL</div>
+        </div>
+        <div class="stat-card stat-skip">
+            <div class="stat-number" id="statSkipped">0</div>
+            <div class="stat-label">⚠️ SKIP</div>
+        </div>
+        <div class="stat-card stat-total">
+            <div class="stat-number" id="statTotal">0</div>
+            <div class="stat-label">📊 TOTAL</div>
+        </div>
+    </div>
+
+    <div id="testResults">
+        <!-- Risultati inseriti da JS -->
+        <div class="category">
+            <div class="category-header" style="background: rgba(0, 50, 0, 0.9);">
+                <span>🚀 AWAITING SYSTEM DIAGNOSTICS...</span>
+                <div class="category-summary">
+                    <span>INITIALIZING...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="export-area" id="exportArea">
+        <div style="color: var(--term-yellow); font-size: 1.3rem; margin-bottom: 10px; text-align: center;">
+            > SYSTEM REPORT READY FOR TRANSMISSION
+        </div>
+        <textarea class="export-text" id="exportText" readonly></textarea>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn-export" onclick="copyToClipboard()">
+                <span>📋</span> COPY TO CLIPBOARD
+            </button>
+            <button class="btn-core" onclick="downloadResults()">
+                <span>💾</span> SAVE AS FILE
+            </button>
+            <button class="btn-clear" onclick="document.getElementById('exportArea').style.display='none'">
+                <span>CloseOperation</span> CLOSE
+            </button>
+        </div>
+    </div>
+
+    <footer>
+        <p>MYCUS GROUP // JAVASCRIPT VALIDATOR UNIT // v2.0</p>
+        <p class="footer-warning">
+            ⚠️ WARNING: THIS TERMINAL EXECUTES JAVASCRIPT IN YOUR BROWSER. DO NOT TEST UNTRUSTED CODE.
+        </p>
+        <p style="margin-top: 8px; color: var(--term-cyan);">
+            > SYSTEM STATUS: <span id="systemStatus">AWAITING DIAGNOSTICS</span>
+        </p>
+    </footer>
+</div>
+
+<script>
+    // ========================================
+    // CONFIGURAZIONE & UTILITIES
+    // ========================================
+    const tester = {
+        results: { 
+            passed: 0, 
+            failed: 0, 
+            skipped: 0, 
+            warnings: [],
+            categories: {}
+        },
+        env: (() => {
+            if (typeof window !== 'undefined' && typeof document !== 'undefined') return 'browser';
+            if (typeof process !== 'undefined' && process.versions?.node) return 'node';
+            if (typeof Deno !== 'undefined') return 'deno';
+            return 'unknown';
+        })(),
+        userAgent: navigator?.userAgent || 'UNKNOWN SYSTEM',
+        startTime: null,
+        endTime: null,
+        
+        logToUI(category, status, name, error = null) {
+            if (!this.results.categories[category]) {
+                this.results.categories[category] = { passed: 0, failed: 0, skipped: 0, tests: [] };
             }
-        };
-
-        // ========================================
-        // 2. MOTORE DI TEST
-        // ========================================
-        const tester = {
-            results: { passed: 0, failed: 0, skipped: 0, categories: {} },
-            env: typeof window !== 'undefined' ? 'BROWSER' : 'NODE',
             
-            reset() {
-                this.results = { passed: 0, failed: 0, skipped: 0, categories: {} };
-                document.getElementById('testResults').innerHTML = '<div style="text-align:center;color:var(--term-yellow)">> INITIALIZING KERNEL...<br>[|||||     ]</div>';
-                this.updateUI();
-            },
-
-            logToUI(category, status, name, error = null) {
-                if (!this.results.categories[category]) {
-                    this.results.categories[category] = { passed: 0, failed: 0, skipped: 0, tests: [] };
+            const cat = this.results.categories[category];
+            
+            if (status === 'pass') cat.passed++;
+            else if (status === 'fail') cat.failed++;
+            else if (status === 'skip') cat.skipped++;
+            
+            cat.tests.push({ status, name, error });
+            
+            // Aggiorna contatori globali
+            if (status === 'pass') this.results.passed++;
+            else if (status === 'fail') this.results.failed++;
+            else if (status === 'skip') this.results.skipped++;
+            
+            this.updateUI();
+            this.playSound(status);
+        },
+        
+        safeTest(category, name, fn) {
+            try {
+                const result = fn();
+                if (result !== false && !(result instanceof Promise && result.then)) {
+                    this.logToUI(category, 'pass', name);
+                    return true;
                 }
-                const cat = this.results.categories[category];
-                
-                // Audio & Conteggi
-                if (status === 'pass') { audioSys.playSuccess(); cat.passed++; this.results.passed++; }
-                else if (status === 'fail') { audioSys.playFail(); cat.failed++; this.results.failed++; }
-                else { cat.skipped++; this.results.skipped++; }
-                
-                cat.tests.push({ status, name, error });
-                this.updateUI();
-            },
+                throw new Error("CONDITION NOT MET");
+            } catch (err) {
+                this.logToUI(category, 'fail', name, err.message || String(err));
+                return false;
+            }
+        },
+        
+        skipTest(category, name, reason = "SKIPPED") {
+            this.logToUI(category, 'skip', `${name} (${reason})`);
+        },
+        
+        checkExists(category, obj, prop, displayName = null) {
+            if (!obj) {
+                this.logToUI(category, 'fail', `MISSING OBJECT: ${displayName || prop}`);
+                return false;
+            }
             
-            safeTest(category, name, fn) {
-                try {
-                    const res = fn();
-                    if (res !== false) { this.logToUI(category, 'pass', name); }
-                    else { throw new Error("Check returned false"); }
-                } catch (err) { this.logToUI(category, 'fail', name, err.message); }
-            },
-
-            safeAsyncTest(category, name, fn) {
-                fn().then(() => this.logToUI(category, 'pass', name))
-                    .catch(err => this.logToUI(category, 'fail', name, err.message));
-            },
+            if (!(prop in obj)) {
+                this.logToUI(category, 'fail', `MISSING: ${displayName || prop}`);
+                return false;
+            }
             
-            updateUI() {
-                document.getElementById('statPassed').textContent = this.results.passed;
-                document.getElementById('statFailed').textContent = this.results.failed;
-                document.getElementById('statSkipped').textContent = this.results.skipped;
-                const total = this.results.passed + this.results.failed + this.results.skipped;
-                const percent = total > 0 ? Math.round((this.results.passed / total) * 100) : 0;
-                document.getElementById('progressText').textContent = `${percent}% OK`;
-                document.getElementById('progressFill').style.width = `${percent}%`;
-            },
+            this.logToUI(category, 'pass', `EXISTS: ${displayName || prop}`);
+            return true;
+        },
+        
+        async safeAsyncTest(category, name, fn) {
+            try {
+                await fn();
+                this.logToUI(category, 'pass', name);
+                return true;
+            } catch (err) {
+                this.logToUI(category, 'fail', name, err.message || String(err));
+                return false;
+            }
+        },
+        
+        updateUI() {
+            document.getElementById('statPassed').textContent = this.results.passed;
+            document.getElementById('statFailed').textContent = this.results.failed;
+            document.getElementById('statSkipped').textContent = this.results.skipped;
+            document.getElementById('statTotal').textContent = 
+                this.results.passed + this.results.failed + this.results.skipped;
             
-            renderResults() {
-                const container = document.getElementById('testResults');
-                container.innerHTML = '';
-                Object.entries(this.results.categories).forEach(([catName, data]) => {
-                    const div = document.createElement('div');
-                    div.className = 'category';
-                    div.innerHTML = `
-                        <div class="category-header" onclick="toggleCategory(this); audioSys.playClick()">
-                            <span>> ${catName.toUpperCase()} MODULE</span>
-                            <span style="font-size:0.9em">OK:${data.passed} ERR:${data.failed}</span>
+            const total = this.results.passed + this.results.failed + this.results.skipped;
+            const percent = total > 0 ? Math.round((this.results.passed / total) * 100) : 0;
+            
+            document.getElementById('progressText').textContent = `${percent}%`;
+            document.getElementById('progressFill').style.width = `${percent}%`;
+            document.getElementById('progressFill').textContent = `${percent}%`;
+            
+            // Aggiorna stato sistema
+            let status = 'DIAGNOSTICS COMPLETE';
+            if (this.results.failed > total * 0.2) status = 'SYSTEM DEGRADED';
+            else if (this.results.failed > 0) status = 'MINOR ERRORS DETECTED';
+            else if (total === 0) status = 'AWAITING DIAGNOSTICS';
+            document.getElementById('systemStatus').textContent = status;
+            document.getElementById('systemStatus').style.color = 
+                this.results.failed > 0 ? 'var(--term-red)' : 'var(--term-green)';
+        },
+        
+        renderResults() {
+            const container = document.getElementById('testResults');
+            container.innerHTML = '';
+            
+            const categories = Object.entries(this.results.categories);
+            
+            if (categories.length === 0) {
+                container.innerHTML = `
+                    <div class="category">
+                        <div class="category-header" style="background: rgba(0, 50, 0, 0.9);">
+                            <span>🔍 NO DIAGNOSTICS PERFORMED</span>
+                            <div class="category-summary">
+                                <span>RUN TESTS TO BEGIN</span>
+                            </div>
                         </div>
-                        <div class="category-body" style="display:none">
-                            ${data.tests.map(t => `
-                                <div class="test-item">
-                                    <span class="${t.status === 'pass' ? 'pass-color' : t.status === 'fail' ? 'fail-color' : 'skip-color'}">
-                                        [${t.status.toUpperCase()}]
-                                    </span>
-                                    <span>${t.name}</span>
-                                </div>
-                                ${t.error ? `<div class="test-error">>> ERR: ${t.error}</div>` : ''}
-                            `).join('')}
-                        </div>`;
-                    container.appendChild(div);
-                });
-            },
-            
-            getReport() {
-                return `MYCUS MAINFRAME LOG\nDATE: ${new Date().toISOString()}\nPASSED: ${this.results.passed}\nFAILED: ${this.results.failed}\n`;
+                    </div>
+                `;
+                return;
             }
-        };
-
-        // ========================================
-        // 3. DEFINIZIONE DEI TEST
-        // ========================================
-        function runAllTests() {
-            audioSys.init();
-            audioSys.playStart();
-            tester.reset();
             
-            // Aggiorna info sistema
-            const ua = navigator.userAgent;
-            const engine = ua.includes('Chrome') ? 'CHROME/V8' : ua.includes('Firefox') ? 'FIREFOX/SM' : 'UNKNOWN';
-            document.getElementById('envInfo').innerHTML = `
-                <div class="env-item">HOST: <span class="env-value">BROWSER</span></div>
-                <div class="env-item">ENGINE: <span class="env-value">${engine}</span></div>
-                <div class="env-item">TIME: <span class="env-value">${new Date().toLocaleTimeString()}</span></div>
+            categories.forEach(([catName, catData]) => {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'category';
+                categoryDiv.innerHTML = `
+                    <div class="category-header" onclick="toggleCategory(this)">
+                        <span>
+                            <span class="category-icon">${this.getCategoryIcon(catName)}</span>
+                            ${this.getCategoryName(catName).toUpperCase()}
+                        </span>
+                        <div class="category-summary">
+                            <span style="color: var(--term-green)">✅ ${catData.passed}</span>
+                            <span style="color: var(--term-red)">❌ ${catData.failed}</span>
+                            <span style="color: var(--term-yellow)">⚠️ ${catData.skipped}</span>
+                            <span>${catData.passed + catData.failed + catData.skipped}</span>
+                        </div>
+                    </div>
+                    <div class="category-body" style="display: none;">
+                        ${catData.tests.map(test => `
+                            <div class="test-item ${test.status}">
+                                <span class="test-icon">${test.status === 'pass' ? '✅' : test.status === 'fail' ? '❌' : '⚠️'}</span>
+                                <span class="test-name">${test.name}</span>
+                                ${test.error ? `<div class="test-error">ERROR: ${test.error}</div>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(categoryDiv);
+            });
+        },
+        
+        getCategoryIcon(cat) {
+            const icons = {
+                'core': '⚛️', 'types': '🏷️', 'operators': '🧮', 'array': '📊', 'string': '🔤',
+                'object': '📦', 'math': '📐', 'date': '📅', 'regex': '🔍', 'function': '⚙️',
+                'es6': '✨', 'es2020': '🌟', 'async': '⏱️', 'web': '🌐', 'storage': '💾',
+                'performance': '⚡'
+            };
+            return icons[cat] || '🧪';
+        },
+        
+        getCategoryName(cat) {
+            const names = {
+                'core': 'CORE JAVASCRIPT', 'types': 'DATA TYPES', 'operators': 'OPERATORS',
+                'array': 'ARRAY METHODS', 'string': 'STRING METHODS', 'object': 'OBJECT METHODS',
+                'math': 'MATH FUNCTIONS', 'date': 'DATE & TIME', 'regex': 'REGEX ENGINE',
+                'function': 'FUNCTION FEATURES', 'es6': 'ES6+ FEATURES', 'es2020': 'ES2020+ FEATURES',
+                'async': 'ASYNC/AWAIT', 'web': 'WEB APIS', 'storage': 'STORAGE APIS',
+                'performance': 'PERFORMANCE'
+            };
+            return names[cat] || cat.toUpperCase();
+        },
+        
+        reset() {
+            this.results = { 
+                passed: 0, 
+                failed: 0, 
+                skipped: 0, 
+                warnings: [],
+                categories: {}
+            };
+            this.startTime = Date.now();
+            document.getElementById('testResults').innerHTML = `
+                <div class="category">
+                    <div class="category-header" style="background: rgba(0, 50, 0, 0.9);">
+                        <span>🌀 RUNNING SYSTEM DIAGNOSTICS...</span>
+                        <div class="category-summary">
+                            <span class="blink">PLEASE WAIT</span>
+                        </div>
+                    </div>
+                </div>
             `;
-
-            setTimeout(() => {
-                // CORE & TYPES
-                tester.safeTest('core', 'Number Type', () => typeof 42 === 'number');
-                tester.safeTest('core', 'String Type', () => typeof 'Mycus' === 'string');
-                tester.safeTest('core', 'Boolean Type', () => typeof true === 'boolean');
-                tester.safeTest('core', 'Undefined Check', () => typeof undefined === 'undefined');
-                
-                // OPERATORS
-                tester.safeTest('math', 'Addition', () => 2+2 === 4);
-                tester.safeTest('math', 'Modulus', () => 10%3 === 1);
-                tester.safeTest('math', 'Exponentiation', () => 2**3 === 8);
-                
-                // ARRAYS
-                tester.safeTest('array', 'Is Array', () => Array.isArray([]));
-                tester.safeTest('array', 'Map Function', () => [1,2].map(x=>x*2)[1] === 4);
-                tester.safeTest('array', 'Filter Function', () => [1,2,3].filter(x=>x>1).length === 2);
-                
-                // OBJECTS
-                tester.safeTest('object', 'Object Keys', () => Object.keys({a:1, b:2}).length === 2);
-                tester.safeTest('object', 'JSON Parse', () => JSON.parse('{"a":1}').a === 1);
-                
-                // ASYNC & WEB
-                tester.safeAsyncTest('async', 'Promise Resolve', async () => await Promise.resolve(true));
-                if (tester.env === 'BROWSER') {
-                    tester.safeTest('web', 'Document Exists', () => typeof document !== 'undefined');
-                    tester.safeTest('web', 'Local Storage', () => typeof localStorage !== 'undefined');
-                }
-
-                // Genera un errore finto per testare il suono di errore (opzionale)
-                // tester.safeTest('security', 'Firewall Check', () => false); 
-
-                tester.renderResults();
-            }, 800); // Ritardo scenico
+            document.getElementById('systemStatus').textContent = 'DIAGNOSTICS IN PROGRESS';
+            document.getElementById('systemStatus').style.color = 'var(--term-yellow)';
+            this.updateUI();
+        },
+        
+        finalize() {
+            this.endTime = Date.now();
+            this.renderResults();
+            document.getElementById('systemStatus').textContent = 
+                this.results.failed === 0 ? 'SYSTEM NOMINAL' : 'DIAGNOSTICS COMPLETE';
+        },
+        
+        getReport() {
+            const duration = this.endTime - this.startTime;
+            let report = `===== MYCUS JAVASCRIPT VALIDATOR REPORT =====\n`;
+            report += `SYSTEM: ${this.env.toUpperCase()}\n`;
+            report += `USER AGENT: ${this.userAgent}\n`;
+            report += `TIMESTAMP: ${new Date().toISOString()}\n`;
+            report += `DURATION: ${duration}ms\n\n`;
+            report += `GLOBAL STATISTICS:\n`;
+            report += `✅ PASSED: ${this.results.passed}\n`;
+            report += `❌ FAILED: ${this.results.failed}\n`;
+            report += `⚠️  SKIPPED: ${this.results.skipped}\n`;
+            report += `📊 TOTAL: ${this.results.passed + this.results.failed + this.results.skipped}\n\n`;
+            
+            report += `CATEGORY BREAKDOWN:\n`;
+            report += `================================================\n`;
+            
+            for (const [cat, data] of Object.entries(this.results.categories)) {
+                report += `\n${this.getCategoryName(cat)}:\n`;
+                report += `  ✅ PASSED: ${data.passed}\n`;
+                report += `  ❌ FAILED: ${data.failed}\n`;
+                report += `  ⚠️  SKIPPED: ${data.skipped}\n`;
+                report += `  TOTAL: ${data.passed + data.failed + data.skipped}\n`;
+            }
+            
+            report += `\n===== END OF REPORT =====`;
+            return report;
+        },
+        
+        // AUDIO SYSTEM (CRT BEEP STYLE)
+        audioCtx: null,
+        initAudio() {
+            if (this.audioCtx) return;
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.audioCtx = new AudioContext();
+            } catch (e) {
+                console.log("Audio not supported");
+            }
+        },
+        playTone(freq, type, dur, vol = 0.1) {
+            if (!this.audioCtx) this.initAudio();
+            if (!this.audioCtx || this.audioCtx.state === 'suspended') return;
+            
+            const o = this.audioCtx.createOscillator();
+            const g = this.audioCtx.createGain();
+            o.type = type || 'square';
+            o.frequency.setValueAtTime(freq, this.audioCtx.currentTime);
+            g.gain.setValueAtTime(vol, this.audioCtx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + dur);
+            o.connect(g);
+            g.connect(this.audioCtx.destination);
+            o.start();
+            o.stop(this.audioCtx.currentTime + dur);
+        },
+        playSound(type) {
+            if (!this.audioCtx) return;
+            switch(type) {
+                case 'pass': 
+                    this.playTone(800, 'square', 0.06, 0.08);
+                    setTimeout(() => this.playTone(1200, 'square', 0.05, 0.08), 70);
+                    break;
+                case 'fail':
+                    this.playTone(200, 'sawtooth', 0.15, 0.15);
+                    break;
+                case 'skip':
+                    this.playTone(400, 'triangle', 0.08, 0.07);
+                    break;
+                case 'click':
+                    this.playTone(600, 'square', 0.04, 0.06);
+                    break;
+            }
         }
+    };
 
-        // UTILITIES UI
-        function toggleCategory(header) {
+    // ========================================
+    // TEST IMPLEMENTATIONS (COMPACT VERSION)
+    // ========================================
+    function testCore() {
+        tester.safeTest('core', 'TYPEOF NUMBER', () => typeof 42 === 'number');
+        tester.safeTest('core', 'TYPEOF STRING', () => typeof 'test' === 'string');
+        tester.safeTest('core', 'TYPEOF BOOLEAN', () => typeof true === 'boolean');
+        tester.safeTest('core', 'TYPEOF OBJECT', () => typeof {} === 'object');
+        tester.safeTest('core', 'TYPEOF NULL QUIRK', () => typeof null === 'object');
+        tester.safeTest('core', 'TYPEOF FUNCTION', () => typeof (()=>{}) === 'function');
+        tester.safeTest('core', 'ARRAY.ISARRAY', () => Array.isArray([1,2,3]));
+        tester.safeTest('core', 'ISNAN', () => isNaN(NaN) && !isNaN(42));
+    }
+    
+    function testTypes() {
+        tester.safeTest('types', 'NUMBER TYPE', () => typeof 3.14 === 'number');
+        tester.safeTest('types', 'STRING TYPE', () => typeof "hello" === 'string');
+        tester.safeTest('types', 'BOOLEAN TYPE', () => typeof false === 'boolean');
+        tester.safeTest('types', 'SYMBOL TYPE', () => typeof Symbol() === 'symbol');
+        if (typeof BigInt !== 'undefined') {
+            tester.safeTest('types', 'BIGINT TYPE', () => typeof 123n === 'bigint');
+        } else {
+            tester.skipTest('types', 'BIGINT', 'NOT SUPPORTED');
+        }
+    }
+    
+    function testOperators() {
+        tester.safeTest('operators', 'ADDITION (+)', () => 2+2===4);
+        tester.safeTest('operators', 'SUBTRACTION (-)', () => 5-3===2);
+        tester.safeTest('operators', 'MULTIPLICATION (*)', () => 6*7===42);
+        tester.safeTest('operators', 'DIVISION (/)', () => 10/2===5);
+        tester.safeTest('operators', 'MODULO (%)', () => 10%3===1);
+        tester.safeTest('operators', 'EXPONENT (**)', () => 2**8===256);
+        tester.safeTest('operators', 'STRICT EQUAL (===)', () => 5===5 && 5!=='5');
+        tester.safeTest('operators', 'TERNARY', () => (true?'YES':'NO')==='YES');
+    }
+    
+    function testArray() {
+        tester.safeTest('array', 'ARRAY.MAP', () => [1,2,3].map(x=>x*2).join(',')==='2,4,6');
+        tester.safeTest('array', 'ARRAY.FILTER', () => [1,2,3,4].filter(x=>x%2===0).length===2);
+        tester.safeTest('array', 'ARRAY.REDUCE', () => [1,2,3].reduce((a,b)=>a+b)===6);
+        tester.safeTest('array', 'ARRAY.INCLUDES', () => [1,2,3].includes(2));
+        tester.safeTest('array', 'ARRAY.FIND', () => [1,2,3].find(x=>x>1)===2);
+    }
+    
+    function testString() {
+        tester.safeTest('string', 'STRING.INCLUDES', () => 'HELLO'.includes('ELL'));
+        tester.safeTest('string', 'STRING.TOUPPERCASE', () => 'test'.toUpperCase()==='TEST');
+        tester.safeTest('string', 'STRING.TOLOWERCASE', () => 'TEST'.toLowerCase()==='test');
+        tester.safeTest('string', 'STRING.TRIM', () => '  x  '.trim()==='x');
+        tester.safeTest('string', 'TEMPLATE LITERALS', () => `VAL:${42}`==='VAL:42');
+    }
+    
+    function testObject() {
+        tester.safeTest('object', 'OBJECT.KEYS', () => Object.keys({a:1,b:2}).length===2);
+        if (typeof Object.values !== 'undefined') {
+            tester.safeTest('object', 'OBJECT.VALUES', () => Object.values({a:1}).join()==='1');
+        } else {
+            tester.skipTest('object', 'OBJECT.VALUES', 'ES2017+');
+        }
+        tester.safeTest('object', 'OBJECT.ASSIGN', () => Object.assign({a:1},{b:2}).b===2);
+    }
+    
+    function testMath() {
+        tester.safeTest('math', 'MATH.ABS', () => Math.abs(-5)===5);
+        tester.safeTest('math', 'MATH.FLOOR', () => Math.floor(3.9)===3);
+        tester.safeTest('math', 'MATH.CEIL', () => Math.ceil(3.1)===4);
+        tester.safeTest('math', 'MATH.SQRT', () => Math.sqrt(16)===4);
+        tester.safeTest('math', 'MATH.RANDOM RANGE', () => {const r=Math.random(); return r>=0 && r<1;});
+    }
+    
+    function testES6() {
+        tester.safeTest('es6', 'LET BLOCK SCOPE', () => {let x=1;if(true){let x=2} return x===1;});
+        tester.safeTest('es6', 'CONST IMMUTABILITY', () => {const x=5; return x===5;});
+        tester.safeTest('es6', 'ARROW FUNCTION', () => ((x)=>x*2)(5)===10);
+        tester.safeTest('es6', 'TEMPLATE STRINGS', () => `${'HELLO'}`==='HELLO');
+        tester.safeTest('es6', 'DEFAULT PARAMETERS', () => ((x=10)=>x)()===10);
+        if (typeof Map !== 'undefined') {
+            tester.safeTest('es6', 'MAP COLLECTION', () => {const m=new Map();m.set('k','v');return m.get('k')==='v';});
+        } else {
+            tester.skipTest('es6', 'MAP', 'NOT SUPPORTED');
+        }
+        if (typeof Set !== 'undefined') {
+            tester.safeTest('es6', 'SET COLLECTION', () => {const s=new Set([1,1,2]);return s.size===2;});
+        } else {
+            tester.skipTest('es6', 'SET', 'NOT SUPPORTED');
+        }
+    }
+    
+    function testAsync() {
+        tester.safeAsyncTest('async', 'PROMISE.RESOLVE', async () => {
+            const res = await Promise.resolve(42);
+            if (res !== 42) throw new Error("RESOLVE FAILED");
+        });
+        tester.safeAsyncTest('async', 'ASYNC/AWAIT', async () => {
+            async function add(a,b) { return a+b; }
+            const res = await add(2,3);
+            if (res !== 5) throw new Error("ASYNC FAILED");
+        });
+    }
+    
+    function testWebAPIs() {
+        if (tester.env !== 'browser') {
+            tester.skipTest('web', 'WEB APIS', 'BROWSER ONLY');
+            return;
+        }
+        tester.checkExists('web', window, 'fetch', 'FETCH API');
+        tester.checkExists('web', document, 'querySelector', 'QUERYSELECTOR');
+        tester.checkExists('web', window, 'localStorage', 'LOCALSTORAGE');
+        tester.checkExists('web', console, 'log', 'CONSOLE.LOG');
+        tester.safeTest('web', 'PERFORMANCE.NOW', () => typeof performance.now() === 'number');
+    }
+
+    // ========================================
+    // UI CONTROLLERS
+    // ========================================
+    function toggleCategory(header) {
+        const body = header.nextElementSibling;
+        const icon = header.querySelector('.category-icon');
+        
+        if (body.style.display === 'none' || body.style.display === '') {
+            body.style.display = 'block';
+            icon.textContent = '🔼';
+        } else {
+            body.style.display = 'none';
+            icon.textContent = '🔽';
+        }
+    }
+    
+    function toggleAllCategories() {
+        tester.playSound('click');
+        const headers = document.querySelectorAll('.category-header');
+        if (headers.length === 0) return;
+        
+        const firstBody = headers[0].nextElementSibling;
+        const expand = !firstBody || firstBody.style.display === 'none';
+        
+        headers.forEach(header => {
             const body = header.nextElementSibling;
-            body.style.display = body.style.display === 'none' ? 'block' : 'none';
+            const icon = header.querySelector('.category-icon');
+            
+            if (expand) {
+                body.style.display = 'block';
+                icon.textContent = '🔼';
+            } else {
+                body.style.display = 'none';
+                icon.textContent = '🔽';
+            }
+        });
+    }
+    
+    async function runAllTests() {
+        tester.playSound('click');
+        tester.reset();
+        
+        // Aggiorna info ambiente
+        const envInfo = document.getElementById('envInfo');
+        envInfo.innerHTML = `
+            <div class="env-item">
+                <span class="env-label">SYSTEM</span>
+                <span class="env-value">${tester.env.toUpperCase()}</span>
+            </div>
+            <div class="env-item">
+                <span class="env-label">ENGINE</span>
+                <span class="env-value">${getEngineName()}</span>
+            </div>
+            <div class="env-item">
+                <span class="env-label">TIMESTAMP</span>
+                <span class="env-value">${new Date().toISOString().replace('T', ' ').substring(0, 19)}</span>
+            </div>
+            <div class="env-item">
+                <span class="env-label">USER AGENT</span>
+                <span class="env-value">${truncate(tester.userAgent, 35)}</span>
+            </div>
+        `;
+        
+        // Esegui tutti i test
+        testCore();
+        testTypes();
+        testOperators();
+        testArray();
+        testString();
+        testObject();
+        testMath();
+        testES6();
+        await testAsync();
+        testWebAPIs();
+        
+        tester.finalize();
+    }
+    
+    function runCategoryTests(category) {
+        tester.playSound('click');
+        tester.reset();
+        
+        document.getElementById('envInfo').innerHTML = `
+            <div class="env-item">
+                <span class="env-label">DIAGNOSTIC MODE</span>
+                <span class="env-value">${tester.getCategoryName(category)}</span>
+            </div>
+            <div class="env-item">
+                <span class="env-label">SYSTEM</span>
+                <span class="env-value">${tester.env.toUpperCase()}</span>
+            </div>
+            <div class="env-item">
+                <span class="env-label">TIMESTAMP</span>
+                <span class="env-value">${new Date().toISOString().replace('T', ' ').substring(0, 19)}</span>
+            </div>
+        `;
+        
+        switch(category) {
+            case 'core':
+                testCore();
+                testTypes();
+                testOperators();
+                break;
+            case 'es6':
+                testES6();
+                testArray();
+                testString();
+                break;
+            case 'web':
+                testWebAPIs();
+                break;
+            default:
+                testCore();
         }
-        function toggleAllCategories() {
-            document.querySelectorAll('.category-body').forEach(b => b.style.display = 'block');
+        
+        tester.finalize();
+    }
+    
+    function exportResults() {
+        tester.playSound('click');
+        const report = tester.getReport();
+        document.getElementById('exportText').value = report;
+        document.getElementById('exportArea').style.display = 'block';
+        document.getElementById('systemStatus').textContent = 'REPORT READY FOR TRANSMISSION';
+        document.getElementById('systemStatus').style.color = 'var(--term-yellow)';
+    }
+    
+    function copyToClipboard() {
+        tester.playSound('click');
+        const text = document.getElementById('exportText').value;
+        navigator.clipboard.writeText(text).then(() => {
+            tester.playSound('pass');
+            document.getElementById('systemStatus').textContent = 'REPORT COPIED TO CLIPBOARD';
+        }).catch(err => {
+            tester.playSound('fail');
+            console.error('Copy failed:', err);
+        });
+    }
+    
+    function downloadResults() {
+        tester.playSound('click');
+        const text = document.getElementById('exportText').value;
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `MYCUS-JS-REPORT-${Date.now()}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById('systemStatus').textContent = 'REPORT SAVED TO DISK';
+    }
+    
+    function clearAll() {
+        tester.playSound('fail');
+        if (confirm('> CONFIRM SYSTEM RESET? ALL DIAGNOSTIC DATA WILL BE LOST.')) {
+            tester.results = { passed: 0, failed: 0, skipped: 0, warnings: [], categories: {} };
+            document.getElementById('testResults').innerHTML = `
+                <div class="category">
+                    <div class="category-header" style="background: rgba(0, 50, 0, 0.9);">
+                        <span>💀 TERMINAL CLEARED</span>
+                        <div class="category-summary">
+                            <span>READY FOR NEW DIAGNOSTICS</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('exportArea').style.display = 'none';
+            tester.updateUI();
+            document.getElementById('systemStatus').textContent = 'AWAITING DIAGNOSTICS';
+            document.getElementById('systemStatus').style.color = 'var(--term-green)';
+            document.getElementById('envInfo').innerHTML = '';
         }
-        function exportResults() {
-            document.getElementById('exportText').value = tester.getReport();
-            document.getElementById('exportArea').style.display = 'block';
-        }
-        function downloadResults() {
-            const blob = new Blob([document.getElementById('exportText').value], { type: 'text/plain' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'MYCUS_LOG.TXT';
-            a.click();
-        }
+    }
+    
+    // ========================================
+    // UTILITIES
+    // ========================================
+    function truncate(str, maxLength) {
+        return str.length > maxLength ? str.substring(0, maxLength) + '..' : str;
+    }
+    
+    function getEngineName() {
+        const ua = navigator.userAgent;
+        if (ua.includes('Firefox')) return 'SPIDERMONKEY (FIREFOX)';
+        if (ua.includes('Safari') && !ua.includes('Chrome')) return 'JAVASCRIPTCORE (SAFARI)';
+        if (ua.includes('Chrome') || ua.includes('Chromium') || ua.includes('Edg')) return 'V8 (CHROMIUM)';
+        if (typeof Deno !== 'undefined') return 'V8 (DENO)';
+        if (typeof process !== 'undefined' && process.versions?.node) return 'V8 (NODE.JS)';
+        return 'UNKNOWN ENGINE';
+    }
+    
+    // ========================================
+    // INIT
+    // ========================================
+    window.addEventListener('load', () => {
+        // Inizializza audio al primo click
+        document.body.addEventListener('click', () => {
+            tester.initAudio();
+            if (tester.audioCtx && tester.audioCtx.state === 'suspended') {
+                tester.audioCtx.resume().catch(console.error);
+            }
+        }, { once: true });
+        
+        // Avvia test automatici dopo 1.5s
+        setTimeout(runAllTests, 1500);
+    });
+</script>
 
-        // Sblocca audio al primo tocco ovunque
-        document.body.addEventListener('click', () => audioSys.init(), { once: true });
-    </script>
 </body>
 </html>
-
